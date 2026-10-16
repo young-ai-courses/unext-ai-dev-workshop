@@ -157,3 +157,7 @@ vercel --prod                             # 再跑一次讓 key 生效
 - 「我卡住了，下一步是什麼」
 - 「幫我把送出按鈕的字改成『幫我整理』」
 - 「我要記住上次打的東西，該加什麼」
+
+---
+
+授權：本教材採 [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/)，可分享、改作，須標示來源，不可商用｜© 2026 睿度科技有限公司 Redutek Co., Ltd.（見 [LICENSE](LICENSE)）
