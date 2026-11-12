@@ -221,48 +221,41 @@ Codex 的額度**依方案、模型、任務大小而變**，不是固定的每�
 
 ---
 
-## 接了 Supabase 之後：存進去了但讀不回來
+## 接了 Neon 之後：存進去了但讀不回來
 
-九成是 **RLS**（Row Level Security）—— Supabase 的權限機制。
-⚠️ **不要假設它是開的還是關的**：從後台 Table Editor 建表通常會幫你開，
-自己在 SQL Editor 下 `create table` 就要自己開。而它一旦開著卻沒寫規則，就是「全部擋住」。
+Neon 是雲端 PostgreSQL 資料庫。遇到讀寫失敗時，先照下面順序確認：
 
-三種症狀對應三種狀況：
-
-| 你看到 | 實際狀況 | 怎麼修 |
+| 你看到 | 先確認什麼 | 怎麼處理 |
 |---|---|---|
-| 寫得進去、讀回來是空陣列 `[]` | RLS 開了，但沒有 select 的 policy | 加一條 select policy |
-| `new row violates row-level security policy` | RLS 開了，但沒有 insert 的 policy | 加一條 insert policy |
-| 什麼都正常，讀寫都通 | 🔴 **RLS 沒開** —— 這不是好事，見下面 | 立刻開起來 |
+| 寫入或讀取失敗 | Vercel 專案的環境變數裡有沒有 `DATABASE_URL` | 補上或修正後，重新部署一次 |
+| 沒用一陣子後，第一次讀取比較慢 | Neon 的資料庫正在從休眠中喚醒 | 等一下再試，約 1 秒喚醒是正常現象 |
+| 連線錯誤，或不知道連線字串放哪裡 | `DATABASE_URL` 是否被放到前端或貼進聊天 | 只放在伺服器端環境變數，立刻移除已公開的連線字串 |
+| 程式說找不到資料表 | 資料表是否真的已經建立 | 請 AI 幫你建表，並確認資料表名稱和欄位都存在 |
 
-在 Supabase 後台 → **SQL Editor** 跑：
+### 🔴 先檢查 Vercel 的環境變數
 
-```sql
--- 建完表就該跑這行
-alter table history enable row level security;
+到 Vercel 專案的 **Settings → Environment Variables**，確認有一個叫
+`DATABASE_URL` 的環境變數。這是伺服器連接 Neon 的資料庫連線字串。
 
--- 然後至少給一條規則，否則連你自己也讀不到
-create policy "允許寫入" on history
-  for insert to anon with check (true);
+環境變數改完後，**一定要重新部署**。只改設定、不重新部署，正在運作的網站不會拿到新設定。
 
-create policy "允許讀取" on history
-  for select to anon using (true);
-```
+### 🟡 第一次讀取比較慢是正常的
 
-> ⚠️ 上面這兩條 policy 是「**誰都可以讀、誰都可以寫**」——
-> 對今天的練習夠用，但那表示任何人都能看到別人存的東西。
-> 真的要分使用者，policy 要改成比對 `auth.uid()`，那需要先做登入。
+Neon 的資料庫閒置一段時間後會自動休眠。沒人使用一陣子後，第一次讀取會先喚醒資料庫，約 1 秒比較慢是正常現象，之後就會恢復。
 
-### 🔴 為什麼「都正常」反而是問題
+### 🔴 DATABASE_URL 不能放到前端
 
-你的 `NEXT_PUBLIC_SUPABASE_ANON_KEY` 開頭是 `NEXT_PUBLIC_` —— 它在前端，
-**任何人打開瀏覽器的原始碼就看得到**。這是 Supabase 的設計，不是你設錯。
+`DATABASE_URL` 是資料庫的連線字串，等同密碼。它只能在伺服器端使用，不能放進前端，也不能放進任何以 `NEXT_PUBLIC_` 開頭的環境變數。
 
-所以安全邊界不在那把 key，而在 RLS。沒開 RLS 的意思是：
-拿到你網址的人可以讀走整張表、也可以清空它。
+不要把它貼進聊天、截圖或公開文件。若不小心公開，立刻更換資料庫連線字串，再更新 Vercel 的環境變數並重新部署。
 
-**驗證方法**：開一個無痕視窗（沒有你的登入狀態），試著讀你的資料。
-讀得到 = RLS 沒生效。
+### 🟢 資料表要先建立
+
+只有接上資料庫還不夠，資料表也要先建立好。請直接對 AI 說：
+
+> 請幫我確認 Neon 的資料庫連線正常，建立 `history` 資料表，欄位是我要保存的內容，然後實際寫入一筆資料再讀回來確認。
+
+不要只看畫面顯示「成功」。要確認資料真的寫入，重新讀取後也找得到。
 
 ---
 
