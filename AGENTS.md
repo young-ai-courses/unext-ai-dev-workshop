@@ -51,8 +51,7 @@ Codex 桌面版打開這個資料夾時會讀到這份檔案 —— 從現在起
 | 畫面上的字、按鈕、顏色 | `starter-kit/app/page.jsx` |
 | AI 回答的內容、格式、語氣 | `starter-kit/app/api/ai/route.js` 的 `SYSTEM_PROMPT` |
 | 換一顆 model | 同一支 route 裡的 model 名稱（Groq 的 model 列表） |
-| 要記住上次打的東西 | 接 Supabase（Vercel Marketplace 裝，環境變數會自動注入）。
-  建完表**一定要開 RLS** 並加 policy，否則資料全裸 |
+| 要記住上次打的東西 | 走 Vercel Marketplace 接 Neon（Neon 是雲端 PostgreSQL 資料庫），環境變數 `DATABASE_URL` 會自動注入。資料庫連線只能在伺服器端使用，不要放進 `NEXT_PUBLIC_` 開頭的變數。建完表要確認資料真的能寫入和讀回來 |
 | 每天自動跑一次 | GitHub Actions（`.github/workflows/`） |
 
 ---
